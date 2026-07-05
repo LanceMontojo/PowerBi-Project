@@ -1,1 +1,12 @@
+# Overview
+
 This is an independent project I put together to sharpen my data analysis skills using Power BI. I'm using the Retail Store Sales: Dirty dataset so I can dive deep into the full ETL (Extract, Load, Transform) process and tackle real-world data cleaning challenges before building out the dashboards.
+
+## Challenges
+- How much revenue are we making?
+- Which products sell the most?
+- Which categories generate the most revenue?
+- Which locations perform the best?
+- Which payment methods are customers using?
+- Does giving discounts increase sales?
+- Which months perform the best?
