@@ -1,4 +1,4 @@
-# ETL using PostgreSQL
+# ETL with PostgreSQL
 
 Because this dataset is intentionally messy, I wanted to document my exact thought process and the steps I took to clean it. 
 This section outlines my systematic approach to handling the "dirty" work, including managing missing values and removing duplicates and more
@@ -43,4 +43,15 @@ Since the count matches our dataset, we can safely assume the import was success
 
 This verifies that there are no duplicate values and therefore we can move to the next step.
 
+- For the next step of data assessment, we check for missing values across all features in the dataset.
+<img width="1457" height="95" alt="image" src="https://github.com/user-attachments/assets/bdf1b4a7-9d2a-44cc-b950-ad210165e282" />
 
+<p align = "center">
+  <img width="570" height="87" alt="image" src="https://github.com/user-attachments/assets/39f6bf24-0b96-4130-8d59-7e5ea64de14a" />
+</p>
+
+<p align = "center">
+  <img width="670" height="281" alt="image" src="https://github.com/user-attachments/assets/51b0c6ab-10c5-407e-b809-217d95dcbc62" />
+</p>
+
+As shown in the results, the features Item, Price_Per_Unit, Quantity, Total_Spent, and Discount_Applied contain missing values. Since these fields are important for understanding transaction details and sales performance, further investigation is required before deciding how to handle the missing data.
