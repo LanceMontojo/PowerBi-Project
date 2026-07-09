@@ -257,3 +257,133 @@ WHERE discount_applied IS NULL;
 ```
 
 <img width="450" height="237" alt="image" src="https://github.com/user-attachments/assets/b8c23909-e05e-42f1-afe2-20b9df0680b9" />
+
+### Check for outliers
+Next, let's check for possible outliers in the numeric features. Before applying the Interquartile Range (IQR) method, we first need to check the minimum, maximum, quartiles (Q1 and Q3), and median values. This gives us an idea of how the data is distributed, and more importantly, the quartiles are needed to calculate the IQR, which will be used to determine whether a value is considered a potential outlier or not.
+
+```sql
+SELECT
+    'Price Per Unit' AS feature,
+    MIN(price_per_unit) AS min,
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price_per_unit) AS q1,
+    PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY price_per_unit) AS median,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price_per_unit) AS q3,
+    MAX(price_per_unit) AS max
+FROM retail_sales_raw
+
+UNION ALL
+
+SELECT
+    'Quantity' AS feature,
+    MIN(quantity) AS min,
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY quantity) AS q1,
+    PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY quantity) AS median,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY quantity) AS q3,
+    MAX(quantity) AS max
+FROM retail_sales_raw
+
+UNION ALL
+
+SELECT
+    'Total Spent' AS feature,
+    MIN(total_spent) AS min,
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_spent) AS q1,
+    PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_spent) AS median,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_spent) AS q3,
+    MAX(total_spent) AS max
+FROM retail_sales_raw;5
+```
+
+<img width="820" height="152" alt="image" src="https://github.com/user-attachments/assets/8c4a3e29-355e-4d2f-9d26-350952b799aa" />
+
+
+Now we can apply the Interquartile Range (IQR) method to identify potential outliers. This method considers values below Q1 − 1.5 × IQR and above Q3 + 1.5 × IQR as potential outliers. Since our dataset only has three numeric features, we will apply this method to Price Per Unit, Quantity, and Total Spent.
+
+```sql
+WITH price_stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price_per_unit) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price_per_unit) AS q3
+    FROM retail_sales_raw
+),
+quantity_stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY quantity) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY quantity) AS q3
+    FROM retail_sales_raw
+),
+total_spent_stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_spent) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_spent) AS q3
+    FROM retail_sales_raw
+)
+
+SELECT
+    'Price Per Unit' AS feature,
+    COUNT(*) AS outlier_count
+FROM retail_sales_raw, price_stats
+WHERE price_per_unit < q1 - 1.5 * (q3 - q1)
+   OR price_per_unit > q3 + 1.5 * (q3 - q1)
+
+UNION ALL
+
+SELECT
+    'Quantity' AS feature,
+    COUNT(*) AS outlier_count
+FROM retail_sales_raw, quantity_stats
+WHERE quantity < q1 - 1.5 * (q3 - q1)
+   OR quantity > q3 + 1.5 * (q3 - q1)
+
+UNION ALL
+
+SELECT
+    'Total Spent' AS feature,
+    COUNT(*) AS outlier_count
+FROM retail_sales_raw, total_spent_stats
+WHERE total_spent < q1 - 1.5 * (q3 - q1)
+   OR total_spent > q3 + 1.5 * (q3 - q1);
+```
+
+It can be seen that there are no outliers found in both Price Per Unit and Quantity using the IQR method. However, 60 datapoints were identified as potential outliers in the Total Spent feature.
+
+Looking at how Total Spent is calculated earlier, which is Price Per Unit × Quantity, these values are most likely just customers buying a larger quantity or purchasing more expensive items rather than being incorrect data. This can also be verified by the table below, where the highest Price Per Unit is 41 and the highest Quantity is 10, resulting in a Total Spent of 410. Because of this, I will keep these datapoints instead of removing them since they still represent valid transactions.
+
+<img width="1478" height="308" alt="image" src="https://github.com/user-attachments/assets/4efc2741-2c00-46f0-9b38-957c8ac44bba" />
+
+The reason these transactions were detected as potential outliers is because the Upper Bound of Total Spent is only 403.5. This is calculated using Q3 + (1.5 × IQR), where IQR = Q3 − Q1 = 192 − 51 = 141, resulting in an upper bound of 403.5. Since the maximum Total Spent in the dataset is 410, any value greater than 403.5 is flagged as a potential outlier by the IQR method. However, as explained earlier, these are still valid transactions and therefore will not be removed from the dataset.
+
+Since we are preparing a master dataset instead of training a machine learning model, there is no need for techniques such as One-Hot Encoding yet, as categorical features can remain in their original form. There are also no features that should be dropped for now since they may still be useful for future analysis. Likewise, there is no need for feature scaling since we are not using any distance-based algorithms at this stage.
+
+For the final step, let's verify once more that there are no remaining missing values, duplicate records, or invalid outliers.
+<p align = "center">
+  <img width="798" height="113" alt="image" src="https://github.com/user-attachments/assets/5e257c1b-e52c-4fb7-af07-455b71db88af" />
+</p>
+
+<p align = "center">
+  <img width="892" height="207" alt="image" src="https://github.com/user-attachments/assets/c9a867f9-91df-42d2-a843-2a9d8ac6e5b3" />
+</p>
+
+Before exporting the cleaned dataset, we will also verify that each feature has the correct data type and sort the transactions from the newest to the oldest date to make the dataset more organized and easier to inspect.
+
+<img width="802" height="416" alt="image" src="https://github.com/user-attachments/assets/c9d1c5bd-1f7e-471f-8a68-f82caa09c69d" />
+
+The data types are now appropriate for each feature, with numeric values stored as numeric and the transaction date stored as a date. Since we introduced a new category, "Unknown", in the Discount Applied feature, it can no longer be stored as a boolean, so keeping it as text is appropriate for now.
+
+With that done, the only thing left is to sort the dataset based on the Transaction Date, from the newest to the oldest, before exporting the cleaned dataset.
+
+```sql
+CREATE TABLE retail_sales_clean AS
+SELECT *
+FROM retail_sales_raw
+ORDER BY transaction_date DESC, transaction_id ASC;
+```
+
+## Load
+After completing all the necessary preprocessing steps, including data cleaning and data validation, the dataset is now ready for the Load phase. The cleaned dataset will be exported as a CSV file, allowing it to be used for further analysis and visualization in Power BI.
+
+- Right-click retail_sales_clean in pgAdmin.
+- Import/Export Data
+- Select Export.
+- Name the file.
+- Choose CSV.
