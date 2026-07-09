@@ -7,7 +7,7 @@ using PostgreSQL.
 ## Extract
 The dataset is provided in a Comma-Separated Values (CSV) file, making it straightforward to import into PostgreSQL. 
 The extraction process consisted of the following steps:
-- Create a database named retail_sales_raw, as the dataset is still in its raw form and has not yet undergone preprocessing. 
+- Create a database and name it, as the dataset is still in its raw form and has not yet undergone preprocessing. 
 
 - Create a table within the database, either by manually defining the columns or by using SQL commands such as **CREATE TABLE**.
 Initially assign all columns with **TEXT** data type to all columns. Doing it this way ensures that PostgreSQL 
