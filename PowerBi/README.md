@@ -132,4 +132,40 @@ Redo the Item section of missing values. Now both Price Per Unit and Item no lon
 
 <img width="330" height="273" alt="image" src="https://github.com/user-attachments/assets/8c7138a9-1b06-4345-9e49-61c4a3e1591e" />
 
+#### Missing Values - Quantity and Total Spent
+The remaining missing values are found in both the Quantity and Total Spent features. Unlike the previous missing values, these cannot be recovered through arithmetic relationships because both values are missing in the same records.
 
+Although Total Spent is calculated by multiplying Price Per Unit by Quantity, determining one requires the other to already be known. Since both features are missing simultaneously, there is insufficient information to reliably infer either value. There are infinitely many possible combinations of Quantity and Total Spent that satisfy the equation, making it impossible to determine the correct values without introducing assumptions.
+
+Because of this, it is better to remove these records rather than impute potentially incorrect values and reduce the overall quality of the dataset.
+
+To remove the remaining records with missing values:
+- Simply right click the column quality (the summarization of missing values and such) and click "Remove Empty"
+<img width="382" height="347" alt="image" src="https://github.com/user-attachments/assets/cec064cc-205b-4d21-9791-b1e5b44c2451" />
+
+- Alternatively, go to "Home" Tab, click "Remove Rows" then select "Remove Blank Rows"
+
+#### Missing Values - Discount Applied
+
+From our previous ETL in SQL, we tested different hypotheses to determine whether the missing values in Discount Applied could be inferred. For example, we investigated whether customers who spent above a certain amount were more likely to receive a discount. However, even the highest observed discount rate was only 52.05%, which is not strong enough to confidently infer the missing values.
+
+To further validate this in Power BI, we can visualize some of these hypotheses.
+- Go back to Power BI Report View.
+- In the Visualizations pane, insert a graph (in this case, a Stacked Bar Chart).
+- Expand the table in the Data pane.
+- Drag the appropriate fields into the visual to compare and contrast the distribution of Discount Applied across different features such as Category, Payment Method, or Total Spent.
+
+From the results, it appears that there is still no meaningful relationship that can be used to infer the missing values in Discount Applied. The proportion of True and False remains close to 50% regardless of the feature being analyzed.
+
+Because there is insufficient evidence to reliably predict whether a missing value should be True or False, the missing values were left unchanged. Imputing them would introduce unsupported assumptions into the dataset, while removing nearly 4,000 records would result in unnecessary data loss. Therefore, the feature was kept in its original Boolean format with the missing values preserved.
+
+## Load
+After completing all necessary transformations in Power Query, the cleaned dataset is ready to be loaded into Power BI's data model.
+
+To load the transformed data:
+- Click Home.
+- Click Close & Apply.
+
+Power BI will then apply all transformation steps created in Power Query and load the cleaned dataset into the data model.
+
+From what I've garnered, unlike SQL, where each transformation must be written as a query, Power Query records every transformation as an applied step. This makes the ETL process easier to understand, modify, and maintain, as individual steps can be edited, reordered, or removed without rewriting the entire workflow. It also enables the data cleaning process to be automatically repeated whenever the dataset is refreshed.
